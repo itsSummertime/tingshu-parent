@@ -1,11 +1,54 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
-"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 
 
 <mapper namespace="com.atguigu.tingshu.album.mapper.AlbumInfoMapper">
 
 
+    <!--
+        查询条件是否存在需要使用动态sql 标签判断！
+        变量名称要与AlbumListVo属性名称对应
+    -->
+    <select id="selectUserAlbumPage" resultType="com.atguigu.tingshu.vo.album.AlbumListVo">
+        select
+        info.albumId,
+        info.albumTitle,
+        info.coverUrl,
+        info.includeTrackCount,
+        info.isFinished,
+        info.status,
+        max(if(info.statType='0401',info.statNum,0)) playStatNum,
+        max(if(info.statType='0402',info.statNum,0)) subscribeStatNum,
+        max(if(info.statType='0403',info.statNum,0)) buyStatNum,
+        max(if(info.statType='0404',info.statNum,0)) commentStatNum
+        from
+        (
+        select
+        album.id as albumId,
+        album.album_title as albumTitle,
+        album.cover_url as coverUrl,
+        album.include_track_count as includeTrackCount,
+        album.is_finished as isFinished,
+        album.status,
+        stat.stat_type as statType,
+        stat.stat_num as statNum
+        from album_info album inner join album_stat stat
+        on album.id = stat.album_id
+        <where>
+            <if test="vo.userId!=null">
+                album.user_id = #{vo.userId}
+            </if>
+            <if test="vo.status!=null and vo.status!=''">
+                and album.status = #{vo.status}
+            </if>
+            <if test="vo.albumTitle!=null and vo.albumTitle!=''">
+                and album.album_title like concat('%',#{vo.status},'%')
+            </if>
+        </where>
+        ) info
+        group by info.albumId
+        order by info.albumId desc
+    </select>
 </mapper>
 
